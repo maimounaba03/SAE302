@@ -1,0 +1,30 @@
+import socket
+import random
+import time
+
+MASTER_IP = "192.168.56.20"
+MASTER_PORT = 5000
+
+def register_to_master():
+    nom = "R3"
+    cle_publique = random.randint(1000, 9999)
+    port_ecoute = random.randint(6000, 7000)
+
+    message = f"{nom}|{cle_publique}|{port_ecoute}"
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((MASTER_IP, MASTER_PORT))
+    print("Connecté au master")
+
+    s.send(message.encode())
+    print("Infos envoyées :", message)
+
+    s.close()
+
+def main():
+    print("Routeur R3 démarre")
+    register_to_master()
+    time.sleep(1)
+
+main()
+

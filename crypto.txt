@@ -1,0 +1,17 @@
+def generer_cle():
+    return 3
+
+def chiffrer(message, cle):
+    return message + str(cle)
+
+def dechiffrer(message, cle):
+    return message.replace(str(cle), "")
+
+def chiffrer_en_couches(message, cles):
+    for cle in reversed(cles):
+        message = chiffrer(message, cle)
+    return message
+
+def dechiffrer_une_couche(message, cle):
+    return dechiffrer(message, cle)
+

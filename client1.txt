@@ -1,0 +1,61 @@
+mport socket
+import random
+import sys
+
+sys.path.append("/home/toto/projet_sae302/utils")
+from crypto import chiffrer_en_couches
+
+MASTER_IP = "192.168.56.20"
+MASTER_PORT = 5000
+
+def demander_routeurs():
+    s = socket.socket(socket.AF_INET, socket.SOCK_ST>
+    s.connect((MASTER_IP, MASTER_PORT))
+    s.send(b"LISTE")
+    data = s.recv(4096).decode()
+    s.close()
+
+    routeurs = []
+    lignes = data.strip().split("\n")
+    for ligne in lignes:
+        nom, ip, port, cle = ligne.split("|")
+        routeurs.append({
+            "nom": nom,
+            "ip": ip,
+            "port": int(port),
+            "cle": int(cle)
+        })
+
+    return routeurs
+def main():
+    print("Demande des routeurs au Master...")
+    routeurs = demander_routeurs()
+
+    print("\nRouteurs disponibles :")
+    for r in routeurs:
+        print(f"- {r['nom']} ({r['ip']}:{r['port']})>
+
+    chemin = random.sample(routeurs, 3)
+
+    print("\nRouteurs choisis :")
+    for r in chemin:
+        print("-", r["nom"])
+
+    message = "HELLO"
+    cles = [r["cle"] for r in chemin]
+
+    message_chiffre = chiffrer_en_couches(message, c>
+
+    premier = chemin[0]
+    s = socket.socket(socket.AF_INET, socket.SOCK_ST>
+    s.connect((premier["ip"], premier["port"]))
+    s.send(message_chiffre.encode())
+    s.close()
+
+    print("\nMessage envoyé au premier routeur")
+
+main()
+
+ 
+      
+    

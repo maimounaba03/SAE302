@@ -1,0 +1,47 @@
+import socket
+import sys
+
+# accès au crypto
+sys.path.append("/home/toto/projet_sae302/utils")
+from crypto import dechiffrer_une_couche
+
+NAME = sys.argv[1]
+PORT = int(sys.argv[2])
+KEY = int(sys.argv[3])
+
+NEXT_IP = sys.argv[4]
+
+# Gestion du dernier routeur
+if NEXT_IP == "NONE":
+    NEXT_PORT = None
+else:
+    NEXT_PORT = int(sys.argv[5])
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind(("0.0.0.0", PORT))
+s.listen(1)
+
+print(f"{NAME} en écoute sur le port {PORT}")
+
+conn, addr = s.accept()
+data = conn.recv(1024).decode()
+message = int(data)
+
+print(f"{NAME} a reçu : {message}")
+
+message_dechiffre = dechiffrer_une_couche(message, CLE)
+print(f"{NAME} après déchiffrement : {message_dechiffre}")
+
+conn.close()
+
+if NEXT_IP != "NONE":
+    s2=socket.socket(socket.AF_INET,socket.SOCK_STREAM)
+    s2.connect((NEXT_IP, NEXT_PORT))
+    s2.send(str(message_dechiffre).encode())
+    s2.close()
+else:
+    print(f" MESSAGE FINAL : {message_dechiffre}")
+
+
+
+

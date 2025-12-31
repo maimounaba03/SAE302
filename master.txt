@@ -1,0 +1,72 @@
+import socket
+import threading
+import pymysql
+
+
+ROUTEURS_FIXES = {
+    "R1": {"ip": "192.168.56.30", "port": 7001, "cle>
+    "R2": {"ip": "192.168.56.30", "port": 7002, "cle>
+    "R3": {"ip": "192.168.56.30", "port": 7003, "cle>
+    "R4": {"ip": "192.168.56.30", "port": 7004, "cle>
+}
+
+# Connexion à la base MariaDB
+def db_connect():
+    return pymysql.connect(
+        host="localhost",          # MariaDB est dan>
+        user="saeUser",               # Utilisateur >
+        password="sae302",               # Pas de mo>
+        database="sae302",
+        cursorclass=pymysql.cursors.DictCursor
+)
+
+def save_routeur_in_db(nom, cle_publique, port, ip):
+    connexion = db_connect()
+    with connexion:
+        with connexion.cursor() as cursor:
+            sql = "INSERT INTO routeurs (nom, cle_pu>
+            cursor.execute(sql, (nom, cle_publique, >
+        connexion.commit()
+    print(f"✔ Routeur {nom} enregistré dans la base")
+
+def handle_client(conn, addr):
+    print(" Client connecté :", addr)
+
+    message = conn.recv(1024).decode()
+
+    if message == "LISTE":
+        routeurs = []
+
+for nom, infos in ROUTEURS_FIXES.items():
+            routeurs.append({
+                "nom": nom,
+                "ip": infos["ip"],
+                "port": infos["port"],
+                "cle": infos["cle"]
+            })
+
+        reponse = ""
+        for r in routeurs:
+            reponse += f"{r['nom']}|{r['ip']}|{r['po>
+
+        conn.send(reponse.encode())
+        print(" Liste des routeurs envoyée au clie>
+
+    conn.close()
+def start_master():
+    serveur = socket.socket(socket.AF_INET, socket.S>
+    serveur.bind(("0.0.0.0", 5000))
+    serveur.listen(5)
+
+    print(" Master prêt. En écoute sur 5000...\n")
+
+    while True:
+        conn, addr = serveur.accept()
+        thread = threading.Thread(target=handle_clie>
+
+        thread.start()
+
+start_master()
+
+
+
