@@ -1,17 +1,28 @@
 def generer_cle():
     return 3
 
+
 def chiffrer(message, cle):
-    return message + str(cle)
+    # On ajoute la clé comme une couche à la fin
+    return message + "|" + str(cle)
+
 
 def dechiffrer(message, cle):
-    return message.replace(str(cle), "")
+    # On enlève UNE SEULE couche (la dernière)
+    suffixe = "|" + str(cle)
+    if message.endswith(suffixe):
+        return message[:-len(suffixe)]
+    return message
+
 
 def chiffrer_en_couches(message, cles):
+    # On chiffre de l'intérieur vers l'extérieur
     for cle in reversed(cles):
         message = chiffrer(message, cle)
     return message
 
+
 def dechiffrer_une_couche(message, cle):
     return dechiffrer(message, cle)
+
 
