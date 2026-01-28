@@ -1,23 +1,55 @@
-mport socket
+import socket
 import random
 import sys
+import threading
 
+# ====== ACCÈS AU CRYPTO ======
 sys.path.append("/home/toto/projet_sae302/utils")
 from crypto import chiffrer_en_couches
 
+# ====== MASTER ======
 MASTER_IP = "192.168.56.20"
 MASTER_PORT = 5000
 
+# ====== PORT CLIENT ======
+if len(sys.argv) != 2:
+    print("Usage : python3 client.py <port>")
+    sys.exit(1)
+
+PORT_CLIENT = int(sys.argv[1])
+
+BUFFER_SIZE = 4096
+
+
+# ==================================================
+# 🔵 ÉCOUTE DES MESSAGES
+# ==================================================
+def ecouter(port):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    s.bind(("0.0.0.0", port))
+    s.listen(5)
+    print(f" Client en écoute sur le port {port}")
+
+    while True:
+        conn, addr = s.accept()
+        data = conn.recv(BUFFER_SIZE).decode()
+        print(f"\n Message reçu : {data}")
+        conn.close()
+
+
+# ==================================================
+# 🔵 DEMANDE DES ROUTEURS
+# ==================================================
 def demander_routeurs():
-    s = socket.socket(socket.AF_INET, socket.SOCK_ST>
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((MASTER_IP, MASTER_PORT))
     s.send(b"LISTE")
-    data = s.recv(4096).decode()
+    data = s.recv(BUFFER_SIZE).decode()
     s.close()
 
     routeurs = []
-    lignes = data.strip().split("\n")
-    for ligne in lignes:
+    for ligne in data.strip().split("\n"):
         nom, ip, port, cle = ligne.split("|")
         routeurs.append({
             "nom": nom,
@@ -27,35 +59,49 @@ def demander_routeurs():
         })
 
     return routeurs
+
+
+# ==================================================
+# 🔵 MAIN
+# ==================================================
 def main():
-    print("Demande des routeurs au Master...")
-    routeurs = demander_routeurs()
+    # ---- DÉMARRER L'ÉCOUTE ----
+    threading.Thread(target=ecouter, args=(PORT_CLIENT,), daemon=True).start()
 
-    print("\nRouteurs disponibles :")
-    for r in routeurs:
-        print(f"- {r['nom']} ({r['ip']}:{r['port']})>
+    while True:
+        print("\nDemande des routeurs au Master...")
+        routeurs = demander_routeurs()
 
-    chemin = random.sample(routeurs, 3)
+        chemin = random.sample(routeurs, 3)
 
-    print("\nRouteurs choisis :")
-    for r in chemin:
-        print("-", r["nom"])
+        print("Routeurs choisis :", " ".join(r["nom"] for r in chemin))
 
-    message = "HELLO"
-    cles = [r["cle"] for r in chemin]
+        # ===== DESTINATION FINALE =====
+        DEST_IP = "192.168.56.21"   # IP du client destinataire
+        DEST_PORT = 8002           # port du client destinataire
 
-    message_chiffre = chiffrer_en_couches(message, c>
+        message = input("\n Message à envoyer : ")
+        if message.strip() == "":
+            continue
 
-    premier = chemin[0]
-    s = socket.socket(socket.AF_INET, socket.SOCK_ST>
-    s.connect((premier["ip"], premier["port"]))
-    s.send(message_chiffre.encode())
-    s.close()
+        # message FINAL = IP|PORT|MESSAGE
+        message = f"{DEST_IP}|{DEST_PORT}|{message}"
 
-    print("\nMessage envoyé au premier routeur")
+        # chiffrement en couches
+        cles = [r["cle"] for r in chemin]
+        message_chiffre = chiffrer_en_couches(message, cles)
 
+        # envoi au premier routeur
+        premier = chemin[0]
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((premier["ip"], premier["port"]))
+        s.send(str(message_chiffre).encode())
+        s.close()
+
+        print(" Message envoyé au premier routeur")
+
+
+# ==================================================
+# 🔵 LANCEMENT
+# ==================================================
 main()
-
- 
-      
-    
